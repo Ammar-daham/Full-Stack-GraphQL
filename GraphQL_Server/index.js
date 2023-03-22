@@ -99,15 +99,31 @@ let books = [
   you can remove the placeholder query once your first own has been implemented 
 */
 
-const typeDefs = `
+const typeDefs = gql`
+
+  type Book {
+    title: String!
+    published: Int!
+    author: String!
+    id: ID! 
+  }
+
+  type Author {
+    name: String!
+    id: ID!
+    born: Int!
+  }
+
   type Query {
-    dummy: Int
+    bookCount: Int!
+    authorCount: Int!
   }
 `
 
 const resolvers = {
   Query: {
-    dummy: () => 0
+    bookCount: () => books.length,
+    authorCount: () => authors.length
   }
 }
 
