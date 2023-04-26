@@ -20,7 +20,6 @@ const NewBook = (props) => {
     event.preventDefault()
 
     createBook({ variables: { title, author, published: Number(published), genres } })
-    console.log('add book...')
 
     setTitle('')
     setPublished('')
