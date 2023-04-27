@@ -2,6 +2,24 @@ const { ApolloServer } = require('@apollo/server')
 const { startStandaloneServer } = require('@apollo/server/standalone')
 const gql = require('graphql-tag')
 const { v1: uuid } = require('uuid')
+const Author = require('./models/author')
+const mongoose = require('mongoose')
+
+mongoose.set('strictQuery', false)
+
+require('dotenv').config()
+
+const MONGO_URI = process.env.MONGODB_URL
+
+console.log('connection to ', MONGO_URI)
+
+mongoose.connect(MONGO_URI)
+  .then(() => {
+    console.log('connected to MongoDB')
+  })
+  .catch((error) => {
+    console.log('error connection to MongoDB: ', error.message)
+  })
 
 let authors = [
   {
@@ -103,9 +121,9 @@ const typeDefs = gql`
   type Book {
     title: String!
     published: Int!
-    author: String!
-    id: ID!
+    author: Author!
     genres: [String!]!
+    id: ID!
   }
 
   type Author {
@@ -121,10 +139,10 @@ const typeDefs = gql`
       author: String!
       published: Int!
       genres: [String!]!
-    ): Book,
+    ): Book!
     editAuthor(
       name: String!
-      born: String!
+      born: Int!
     ): Author
   }
 
