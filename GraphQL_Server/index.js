@@ -3,7 +3,11 @@ const { startStandaloneServer } = require('@apollo/server/standalone')
 const gql = require('graphql-tag')
 const { v1: uuid } = require('uuid')
 const Author = require('./models/author')
+const Book = require('./models/book')
+
 const mongoose = require('mongoose')
+const book = require('./models/book')
+const author = require('./models/author')
 
 mongoose.set('strictQuery', false)
 
@@ -113,24 +117,22 @@ let books = [
   },
 ]
 
-/*
-  you can remove the placeholder query once your first own has been implemented 
-*/
 
 const typeDefs = gql`
+
+  type Author {
+    name: String!
+    id: ID!
+    born: Int
+    bookCount: Int
+  }
+
   type Book {
     title: String!
     published: Int!
     author: Author!
     genres: [String!]!
     id: ID!
-  }
-
-  type Author {
-    name: String!
-    id: ID!
-    born: Int
-    bookCount: Int!
   }
 
   type Mutation {
@@ -155,41 +157,62 @@ const typeDefs = gql`
 `
 
 const resolvers = {
-  Query: {
-    bookCount: () => books.length,
-    authorCount: () => authors.length,
-    allBooks: (root, args) => {
-      let filteredBooks = books
-      if (args.author) {
-        filteredBooks = filteredBooks.filter(
-          (book) => book.author === args.author,
-        )
-      }
-      if (args.genre) {
-        filteredBooks = filteredBooks.filter((book) =>
-          book.genres.includes(args.genre),
-        )
-      }
-      return filteredBooks
+  Book: {
+    author: async (book) => {
+      const author = await Author.findById(book.author);
+      return {
+        id: author._id.toString(),
+        name: author.name,
+        born: author.born,
+        bookCount: await Book.find({ author: author._id }).countDocuments(),
+      };
     },
-    allAuthors: () => {
+  },
+  Query: {
+    bookCount: async () => Book.collection.countDocuments(),
+    authorCount: async () => Author.collection.countDocuments(),
+    allBooks: async (root, args) => {
+      if(!args.author && !args.genre) {
+        const books = await Book.find().populate('author')
+          return books.map((book) => ({
+          title: book.title,
+          published: book.published,
+          genres: book.genres,
+          author: book.author,
+        }))
+      }
+      if (args.author && args.genre) {
+        const author = await Author.findOne({ name: args.author })
+        return Book.find({
+          author: author._id,
+          genres: { $in: [args.genre] },
+        }).populate('author')
+      }
+      if (args.author) {
+        const author = await Author.findOne({ name: args.author })
+        return Book.find({ author: author._id }).populate('author')
+      }
+      return Book.find({ genres: { $in: [args.genre] } }).populate('author')
+    },
+    allAuthors: async () => {
+      const authors = await Author.find({})
+      const books = await Book.find({})
       return authors.map((author) => ({
         name: author.name,
         born: author.born,
-        bookCount: books.filter((book) => book.author === author.name).length,
+        bookCount: books.filter((book) => book.author.toString() === author._id.toString()).length
       }))
-    },
+    } 
   },
   Mutation: {
-    addBook: (root, args) => {
-      const book = { ...args, id: uuid() }
-      books = books.concat(book)
-      if(authors.find(a => a.name === args.author)) {
-        authors 
-      } else {
-        authors = authors.concat({ name: args.author})
+    addBook: async (root, args) => {
+      let author = await Author.findOne({ name: args.author })
+      if (!author) {
+        author = new Author({ name: args.author })
+        await author.save()
       }
-      return book
+      const book = new Book({ ...args, author })
+      return book.save()
     },
     editAuthor: (root, args) => {
       const author = authors.find(a => a.name === args.name) 
