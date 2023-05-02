@@ -1,6 +1,7 @@
 const { ApolloServer } = require('@apollo/server')
 const { startStandaloneServer } = require('@apollo/server/standalone')
 const gql = require('graphql-tag')
+const { GraphQLError } = require('graphql')
 const { v1: uuid } = require('uuid')
 const Author = require('./models/author')
 const Book = require('./models/book')
@@ -208,20 +209,48 @@ const resolvers = {
     addBook: async (root, args) => {
       let author = await Author.findOne({ name: args.author })
       if (!author) {
-        author = new Author({ name: args.author })
-        await author.save()
-      }
-      const book = new Book({ ...args, author })
-      return book.save()
+        try{
+          author = new Author({ name: args.author })
+          await author.save()
+        } catch(error) {
+          throw new GraphQLError('Saving author failed', {
+            extensions: {
+              code: 'author name must be unique and 4 char',
+              invalidArgs: args.name,
+              error
+            }
+        })
+        }
+      } 
+      const newBook = new Book({ ...args, author })
+      try {
+        await newBook.save()
+      } catch(error) {
+        throw new GraphQLError('Saving book failed', {
+          extensions: {
+            code: 'Book title must be unique and 5 char',
+            invalidArgs: args.name,
+            error
+          }
+      })
+    }
+    return newBook
     },
-    editAuthor: (root, args) => {
-      const author = authors.find(a => a.name === args.name) 
-      if(!author) {
-        return null
+    editAuthor: async (root, args) => {
+      const author = await Author.findOne({ name: args.name })
+      author.born = args.born
+      try {
+        await author.save()
+      } catch(error) {
+        throw new GraphQLError('Saving born year failed', {
+          extensions: {
+            code: 'BAD_USER_INPUT',
+            invalidArgs: args.name,
+            error
+          }
+        })
       }
-      const updatedAuthor = {...author, born: args.born}
-      authors = authors.map(a => a.name === args.name ? updatedAuthor : a)
-      return updatedAuthor
+      return author
     }
   },
 }
