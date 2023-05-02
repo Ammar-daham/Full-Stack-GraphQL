@@ -14,6 +14,7 @@ const App = () => {
   const books = useQuery(ALL_BOOKS)
 
   console.log("authors:",authors.data?.allAuthors)
+  console.log("books:",books)
 
   if (authors.loading || books.loading) {
     return <div>loading...</div>
