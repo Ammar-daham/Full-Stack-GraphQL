@@ -24,7 +24,7 @@ const Authors = (props) => {
 
   useEffect(() => {
     if (result.data && result.data.editNumber === null) {
-      setError('person not found')
+      setError('author not found')
     }
   }, [result.data])
 

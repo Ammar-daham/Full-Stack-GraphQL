@@ -1,28 +1,46 @@
 import { useState, useEffect } from 'react'
 import { useMutation } from '@apollo/client'
-import { LOGIN } from '../queries'
+import { LOGIN, ME } from '../queries'
+import { useApolloClient } from '@apollo/client'
+
+
 
 const LoginForm = ({ show, setToken, setError }) => {
   const [username, setUsername] = useState('')
   const [password, setPassword] = useState('')
 
-  
+  const [login, { data }] = useMutation(LOGIN)
 
-  const [login, result] = useMutation(LOGIN, {
-    onError: (error) => {
-      setError(error.graphQLErrors[0].message)
-    },
-  })
+  const client = useApolloClient()
 
-  
 
   useEffect(() => {
-    if (result.data) {
-      const token = result.data.login.value
+    if (data && data.login && data.login.value) {
+      const token = data.login.value
       setToken(token)
       localStorage.setItem('login-user-token', token)
+      loginCacheUpdate()
     }
-  }, [result.data]) 
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [data, setToken]) 
+
+  const loginCacheUpdate = async () => {
+    try {
+      await client.resetStore()
+      const { data: { me } } = await client.query({ query: ME })
+      client.writeQuery({ query: ME, data: { me } })
+    } catch (error) {
+      console.error('Error updating cache:', error)
+    }
+  }
+//   useEffect(() => {
+//     if (data) {
+//         console.log(data)
+//       const token = data.login.value
+//       setToken(token)
+//       localStorage.setItem('login-user-token', token)
+//     }
+//   }, [data])
 
   const submit = (event) => {
     event.preventDefault()
@@ -46,7 +64,7 @@ const LoginForm = ({ show, setToken, setError }) => {
       <div>
         password{' '}
         <input
-          type={password}
+          type="password"
           value={password}
           onChange={({ target }) => setPassword(target.value)}
         />
