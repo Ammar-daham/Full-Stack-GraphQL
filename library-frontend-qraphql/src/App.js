@@ -11,6 +11,7 @@ import RecommendBooks from './components/RecommendBooks'
 const App = () => {
   const [page, setPage] = useState('authors')
   const [token, setToken] = useState(null)
+  const [ error, setError ] = useState(null)
   const authors = useQuery(ALL_AUTHORS)
   const books = useQuery(ALL_BOOKS)
   const me = useQuery(ME)
@@ -52,7 +53,7 @@ const App = () => {
           books={books.data?.allBooks}
         />
       )}
-      <NewBook show={page === 'add'} />
+      <NewBook show={page === 'add'} setError={setError} error={error} />
       {!token && (
         <LoginForm
           show={page === 'login'}

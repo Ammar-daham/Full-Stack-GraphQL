@@ -9,7 +9,7 @@ const Books = (props) => {
   const { loading, data } = useQuery(BOOKS_BY_GENRE, {
     variables: { genre: selectedGenre },
   });
-
+  
   if (!props.show) {
     return null
   }
@@ -17,6 +17,7 @@ const Books = (props) => {
   if (loading) {
     return <div>Loading...</div>;
   }
+
 
   // const booksToShow = selectedGenre
   //   ? props.books.filter((book) => book.genres.includes(selectedGenre))
