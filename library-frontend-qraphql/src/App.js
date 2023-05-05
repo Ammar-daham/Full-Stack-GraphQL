@@ -2,10 +2,9 @@ import { useState } from 'react'
 import Authors from './components/Authors'
 import Books from './components/Books'
 import NewBook from './components/NewBook'
-import { useQuery } from '@apollo/client'
-import { ALL_AUTHORS, ALL_BOOKS, ME } from './queries'
+import { useQuery, useSubscription, useApolloClient } from '@apollo/client'
+import { ALL_AUTHORS, ALL_BOOKS, ME, BOOK_ADDED } from './queries'
 import LoginForm from './components/LoginForm'
-import { useApolloClient } from '@apollo/client'
 import RecommendBooks from './components/RecommendBooks'
 
 const App = () => {
@@ -17,6 +16,14 @@ const App = () => {
   const me = useQuery(ME)
 
   const client = useApolloClient()
+
+  useSubscription(BOOK_ADDED, {
+    onData: ({ data }) => {
+      console.log(data)
+      const addedBook = data.data.bookAdded
+      window.alert(`${addedBook.title} has been added to library` );
+    }
+  })
 
   const logout = () => {
     setToken(null)
