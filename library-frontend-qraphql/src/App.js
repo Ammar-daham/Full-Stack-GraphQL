@@ -6,6 +6,7 @@ import { useQuery, useSubscription, useApolloClient } from '@apollo/client'
 import { ALL_AUTHORS, ALL_BOOKS, ME, BOOK_ADDED } from './queries'
 import LoginForm from './components/LoginForm'
 import RecommendBooks from './components/RecommendBooks'
+import { updateCache } from './cache'
 
 const App = () => {
   const [page, setPage] = useState('authors')
@@ -22,6 +23,7 @@ const App = () => {
       console.log(data)
       const addedBook = data.data.bookAdded
       window.alert(`${addedBook.title} has been added to library` );
+      updateCache(client.cache, { query: ALL_BOOKS }, addedBook)
     }
   })
 
