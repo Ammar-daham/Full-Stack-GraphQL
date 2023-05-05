@@ -45,14 +45,37 @@ const resolvers = {
       return Book.find({ genres: { $in: [args.genre] } }).populate('author')
     },
     allAuthors: async () => {
+      // const authors = await Author.find({})
+      // const books = await Book.find({})
+      // return authors.map((author) => ({
+      //   name: author.name,
+      //   born: author.born,
+      //   bookCount: books.filter(
+      //     (book) => book.author.toString() === author._id.toString(),
+      //   ).length,
+      // }))
       const authors = await Author.find({})
-      const books = await Book.find({})
+
+      // Fetch all the books associated with each author
+      const books = await Book.find({
+        author: { $in: authors.map((a) => a._id) },
+      }).populate('author')
+
+      // Count the number of books associated with each author
+      const bookCounts = books.reduce((acc, book) => {
+        const authorId = book.author._id.toString()
+        if (!acc[authorId]) {
+          acc[authorId] = 0
+        }
+        acc[authorId]++
+        return acc
+      }, {})
+
+      // Combine author data with book count
       return authors.map((author) => ({
         name: author.name,
         born: author.born,
-        bookCount: books.filter(
-          (book) => book.author.toString() === author._id.toString(),
-        ).length,
+        bookCount: bookCounts[author._id.toString()] || 0,
       }))
     },
     me: (root, args, context) => {
